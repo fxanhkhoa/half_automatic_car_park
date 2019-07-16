@@ -9,6 +9,8 @@ from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 import io
 import json
+import os.path
+import os
 
 
 clients = [] #### For list of clients
@@ -22,18 +24,33 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         close = 0
         self.filename = ''
         self.isfilename = False
+        self.done = False
         while not close:
             try:
-                buf = self.request.recv(52428800)
+                buf = self.request.recv(1024)  # max 52428800
                 try:
                     data = str(buf, 'utf8')
                     print(data)
                     json_obj = json.loads(data)
                     self.filename = json_obj["filename"]
+                    
+                    if (".jpg" in self.filename):
+                        self.folder_file = "images/" + self.filename
+                    elif (".html" in self.filename):
+                        self.folder_file = "logs/" + self.filename
+
+                    if os.path.exists(self.folder_file) and self.filename != '':
+                        os.remove(self.folder_file)
+                    
                     self.isfilename = True
+                    if (json_obj["status"] == "PROCESSING"):
+                        self.done = False
+                    else:
+                        self.done = True
+
                     print("Is File Name \n")
                 except Exception as e:
-                    print(e)
+                    # print(e)
                     self.isfilename = False
                 if not buf:
                     print('Disconnected: ', self.client_address)
@@ -42,20 +59,15 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     return
                 # response = bytes("{}: {}".format(cur_thread.name, data), 'utf8')
                 # self.request.sendall(response)
-                print(self.filename, self.isfilename)
-                if (self.isfilename == False):
-                    if (".jpg" in self.filename):
-                        # print(buf)
-                        img = Image.open(io.BytesIO(buf))
-                        folder_file = "images/" + self.filename
-                        print(folder_file)
-                        img.save(folder_file)
-                    if (".html" in self.filename):
-                        folder_file = "logs/" + self.filename
-                        print(folder_file)
-                        f = open(folder_file, 'wb')
-                        f.write(buf)
-                        f.close()
+                print(self.filename, self.isfilename, self.done)
+                if (self.isfilename == False) and (self.done == False):
+                    print("writing")
+                    #### Write file ####
+                    f = open(self.folder_file, 'ab')
+                    f.write(buf)
+                    f.close()
+                    print("write OK")
+                    self.request.sendall(bytes("OK", 'utf8'))
             except Exception as e:
                 print(e)
                 print('Disconnected: ', self.client_address)
