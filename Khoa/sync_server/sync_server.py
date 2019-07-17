@@ -1,14 +1,15 @@
+from utils import upload
+
 import socket
-import threading
 import socketserver
+import json
+
 import signal
 import sys
+
 import _thread
-from PIL import Image
-from PIL import ImageFile
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-import io
-import json
+import threading
+
 import os.path
 import os
 
@@ -20,7 +21,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
         print("{} connected".format(self.client_address))
         clients.append(self.request)
-        cur_thread = threading.current_thread()
         close = 0
         self.filename = ''
         self.isfilename = False

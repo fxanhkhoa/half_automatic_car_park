@@ -5,8 +5,9 @@ import json
 import time
 
 message = {
-    "filename": "log.html",
-    "status": "PROCESSING"
+    "filename": "0000_00532_b.jpg",
+    "status": "PROCESSING",
+    "data": ""
 }
 
 json_str = json.dumps(message)
@@ -24,8 +25,12 @@ sock.sendall(bytes(json_str, 'utf8'))
 time.sleep(2)
 
 # Send file bytes
-d = bytearray(f.read(1024))
+d = bytes(f.read(1024))
 while d:
+    d = d + bytes(message['filename'], 'utf8')
+    d = d + bytes([len(message['filename'])])
+    print(len(d))
+    print('len filename', bytes([len(message['filename'])]))
     sock.sendall(d)
     res = sock.recv(1024)
     print(res)
