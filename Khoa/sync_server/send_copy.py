@@ -5,7 +5,7 @@ import json
 import time
 
 message = {
-    "filename": "0000_00532_b.jpg",
+    "filename": "log.html",
     "status": "PROCESSING",
     "mode": "UPLOAD"
 }

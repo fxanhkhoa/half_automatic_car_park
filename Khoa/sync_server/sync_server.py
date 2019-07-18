@@ -1,4 +1,5 @@
-from utils import upload
+from utils.upload import upload
+from utils.download import download
 
 import socket
 import socketserver
@@ -16,62 +17,64 @@ import os
 
 clients = [] #### For list of clients
 
+def isJson(jsonStr):
+    try:
+        json.loads(jsonStr)
+        print("is Json")
+        return True
+    except Exception as e:
+        print("Not Json")
+        return False
+
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         print("{} connected".format(self.client_address))
         clients.append(self.request)
         close = 0
-        self.filename = ''
         self.isfilename = False
-        self.done = False
+        self.mode = ''
+        self.filename = ''
         while not close:
             try:
                 buf = self.request.recv(2048)  # max 52428800
                 try:
+                    data = ''
                     data = str(buf, 'utf8')
                     print(data)
-                    json_obj = json.loads(data)
-                    self.filename = json_obj["filename"]
-                    
-                    if (".jpg" in self.filename):
-                        self.folder_file = "images/" + self.filename
-                    elif (".html" in self.filename):
-                        self.folder_file = "logs/" + self.filename
-
-                    if os.path.exists(self.folder_file) and self.filename != '':
-                        os.remove(self.folder_file)
-                    
-                    self.isfilename = True
-                    if (json_obj["status"] == "PROCESSING"):
-                        self.done = False
-                    else:
-                        self.done = True
-
-                    print("Is File Name \n")
                 except Exception as e:
-                    # print(e)
-                    self.isfilename = False
+                    print(e)
+
+                if isJson(data):
+                    json_object = json.loads(data)
+                    self.mode = json_object['mode']
+                    self.filename = json_object['filename']
+                    if (self.mode == 'UPLOAD'):
+                        ## Remove 1st time ##
+                        file_location = upload.get_location(self.filename)
+                        if os.path.exists(file_location):
+                            os.remove(file_location)
+                    
+                    elif (self.mode == "DOWNLOAD"):
+                        self.download = download(self.request, self.filename)
+                        self.download.start()
+                elif "OK" in data:
+                    self.download.set_flag(True)
+                elif "FAIL" in data:
+                    self.download.set_flag(True)
+                    self.download.set_stop(True)
+                else: # Not Json
+                    self.upload_process = upload(self.request, buf)
+                    self.upload_process.start()
+                    
+                ##### Handle disconnect #####
                 if not buf:
                     print('Disconnected: ', self.client_address)
                     clients.remove(self.request)
                     close = 1
                     return
-                # response = bytes("{}: {}".format(cur_thread.name, data), 'utf8')
-                # self.request.sendall(response)
-                print(self.filename, self.isfilename, self.done)
-                if (self.isfilename == False) and (self.done == False):
-                    print("writing")
-                    #### Write file ####
-                    length = int(buf[-1])
-                    print(length)
-                    new_buf = buf[:-(length + 1)]
-                    print(len(new_buf))
-                    f = open(self.folder_file, 'ab')
-                    f.write(new_buf)
-                    f.close()
-                    print("write OK")
-                    self.request.sendall(bytes("OK", 'utf8'))
+
+            ##### Handle disconnect #####        
             except Exception as e:
                 print(e)
                 print('Disconnected: ', self.client_address)
