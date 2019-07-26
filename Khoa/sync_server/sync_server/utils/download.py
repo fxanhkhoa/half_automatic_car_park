@@ -1,13 +1,11 @@
 import socket
 import threading
+import os
 
 class download (threading.Thread):
     @staticmethod
     def get_location(filename):
-        if (".jpg" in filename):
-            location = "images/" + filename
-        elif (".html" in filename):
-            location = "logs/" + filename
+        location = os.path.dirname(filename)
         return location
 
     def __init__(self, request_client, filename):
@@ -20,8 +18,7 @@ class download (threading.Thread):
 
     def run(self):
         try:
-            location = download.get_location(self.filename)
-            f = open(location, 'rb')
+            f = open(self.filename, 'rb')
             d = f.read(1024)
             while d:
                 d = d + bytes(self.filename, 'utf8')

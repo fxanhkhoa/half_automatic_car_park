@@ -1,14 +1,12 @@
 import socket
 import threading
+import os
 
 class upload (threading.Thread):
     
     @staticmethod
     def get_location(filename):
-        if (".jpg" in filename):
-            location = "images/" + filename
-        elif (".html" in filename):
-            location = "logs/" + filename
+        location = os.path.dirname(filename)
         return location
 
     def __init__(self, request_client, data):
@@ -21,7 +19,7 @@ class upload (threading.Thread):
     def run(self):
         try:
             self.parse_location()
-            f = open(self.location, 'ab')
+            f = open(self.filename, 'ab')
             f.write(self.data)
             self.send_signal_received()
             f.close()
@@ -40,4 +38,3 @@ class upload (threading.Thread):
         self.filename = str(self.data[-(file_name_length + 1):-1], 'utf8')
         self.location = upload.get_location(self.filename)
         self.data = self.data[:-(file_name_length + 1)]
-

@@ -41,28 +41,33 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 try:
                     data = ''
                     data = str(buf, 'utf8')
-                    print(data)
+                    # print(data)
                 except Exception as e:
-                    print(e)
+                    print("Error when change str", e)
 
+                ## Check if json ##
                 if isJson(data):
                     json_object = json.loads(data)
                     self.mode = json_object['mode']
                     self.filename = json_object['filename']
+                    self.download_process = download(self.request, self.filename)
                     if (self.mode == 'UPLOAD'):
                         ## Remove 1st time ##
                         file_location = upload.get_location(self.filename)
-                        if os.path.exists(file_location):
-                            os.remove(file_location)
+                        if not os.path.exists(file_location):
+                            os.makedirs(file_location)
+                        if os.path.exists(self.filename):
+                            os.remove(self.filename)
                     
                     elif (self.mode == "DOWNLOAD"):
-                        self.download = download(self.request, self.filename)
-                        self.download.start()
-                elif "OK" in data:
-                    self.download.set_flag(True)
-                elif "FAIL" in data:
-                    self.download.set_flag(True)
-                    self.download.set_stop(True)
+                        self.download_process = download(self.request, self.filename)
+                        self.download_process.start()
+                ## Got OK When Download mode ##
+                elif "OK" == data:
+                    self.download_process.set_flag(True)
+                elif "FAIL" == data:
+                    self.download_process.set_flag(True)
+                    self.download_process.set_stop(True)
                 else: # Not Json
                     self.upload_process = upload(self.request, buf)
                     self.upload_process.start()

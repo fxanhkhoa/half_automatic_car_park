@@ -5,7 +5,7 @@ import json
 import time
 
 message = {
-    "filename": "0000_00532_b.jpg",
+    "filename": "logs/log.html",
     "status": "PROCESSING",
     "mode": "UPLOAD"
 }
@@ -15,7 +15,7 @@ json_str = json.dumps(message)
 f = open(message["filename"], 'rb')
 # byte_array = bytearray(f.read())
 
-HOST, PORT = "10.38.32.171", 1000
+HOST, PORT = "192.168.1.5", 1000
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
