@@ -48,20 +48,23 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 ## Check if json ##
                 if isJson(data):
                     json_object = json.loads(data)
-                    self.mode = json_object['mode']
-                    self.filename = json_object['filename']
                     self.download_process = download(self.request, self.filename)
-                    if (self.mode == 'UPLOAD'):
-                        ## Remove 1st time ##
-                        file_location = upload.get_location(self.filename)
-                        if not os.path.exists(file_location):
-                            os.makedirs(file_location)
-                        if os.path.exists(self.filename):
-                            os.remove(self.filename)
+                    if (json_object["status"] == "OK"):
+                        self.download_process.set_flag(True)
+                    else:
+                        self.mode = json_object['mode']
+                        self.filename = json_object['filename']
+                        if (self.mode == 'UPLOAD'):
+                            ## Remove 1st time ##
+                            file_location = upload.get_location(self.filename)
+                            if not os.path.exists(file_location):
+                                os.makedirs(file_location)
+                            if os.path.exists(self.filename):
+                                os.remove(self.filename)
                     
-                    elif (self.mode == "DOWNLOAD"):
-                        self.download_process = download(self.request, self.filename)
-                        self.download_process.start()
+                        elif (self.mode == "DOWNLOAD"):
+                            self.download_process = download(self.request, self.filename)
+                            self.download_process.start()
                 ## Got OK When Download mode ##
                 elif "OK" == data:
                     self.download_process.set_flag(True)

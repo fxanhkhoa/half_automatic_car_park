@@ -1,6 +1,7 @@
 import socket
 import threading
 import os
+import json
 
 class upload (threading.Thread):
     
@@ -31,7 +32,13 @@ class upload (threading.Thread):
         self.status = status
 
     def send_signal_received(self):
-        self.request_client.sendall(bytes("OK", 'utf8'))
+        message = {
+            "filename": "",
+            "status": "OK",
+            "mode": "UPLOAD"
+        }
+        json_str = json.dumps(message)
+        self.request_client.sendall(bytes(json_str, 'utf8'))
 
     def parse_location(self):
         file_name_length = int(self.data[-1])
