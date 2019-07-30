@@ -1,0 +1,29 @@
+﻿<Window x:Class="sync_application.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:sync_application"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="177.959" Width="274.826">
+    <Grid>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Row="0" Grid.Column="0" Name="FolderName"></TextBox>
+            <Button Grid.Row="0" Grid.Column="1" Name="syncFolder_Btn" Click="SyncFolder_Btn_Click">Select Folder to Sync</Button>
+            <TextBox Grid.Row="1" Grid.Column="0" Name="IP" Text="192.168.1.3" TextChanged="IP_TextChanged" GotFocus="IP_GotFocus" LostFocus="IP_LostFocus"/>
+            <TextBox Grid.Row="1" Grid.Column="1" Name="Port" Text="1000" TextChanged="Port_TextChanged" LostFocus="Port_LostFocus" GotFocus="Port_GotFocus"></TextBox>
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Here"></TextBlock>
+            <Button Grid.Row="2" Grid.Column="1" Name="sync_Btn" Click="Sync_Btn_Click">Sync Now</Button>
+        </Grid>
+    </Grid>
+</Window>

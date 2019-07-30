@@ -8,6 +8,7 @@ class upload (threading.Thread):
     @staticmethod
     def get_location(filename):
         location = os.path.dirname(filename)
+        print(location)
         return location
 
     def __init__(self, request_client, data):
@@ -33,7 +34,7 @@ class upload (threading.Thread):
 
     def send_signal_received(self):
         message = {
-            "filename": "",
+            "filename": self.filename,
             "status": "OK",
             "mode": "UPLOAD"
         }
@@ -42,6 +43,9 @@ class upload (threading.Thread):
 
     def parse_location(self):
         file_name_length = int(self.data[-1])
+        print('len = ', file_name_length)
         self.filename = str(self.data[-(file_name_length + 1):-1], 'utf8')
+        # print(self.filename)
         self.location = upload.get_location(self.filename)
         self.data = self.data[:-(file_name_length + 1)]
+        # print(self.data)
