@@ -10,6 +10,7 @@ import sys
 
 import _thread
 import threading
+import queue
 
 import os.path
 import os
@@ -35,6 +36,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         self.isfilename = False
         self.mode = ''
         self.filename = ''
+        self.download_process = download(self.request, self.filename)
+
         while not close:
             try:
                 buf = self.request.recv(2048)  # max 52428800
@@ -49,9 +52,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 ## Check if json ##
                 if isJson(data):
                     json_object = json.loads(data)
+                    print(data)
                     self.filename = ""
-                    self.download_process = download(self.request, self.filename)
                     if (json_object["status"] == "OK"):
+                        print("set flag")
                         self.download_process.set_flag(True)
                     else:
                         self.mode = json_object['mode']
@@ -67,7 +71,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                                 os.remove(self.filename)
 
                         elif (self.mode == "DOWNLOAD"):
-                            self.download_process = download(self.request, self.filename)
+                            print("create")
+                            self.download_process.request_client = self.request
+                            self.download_process.filename = self.filename
                             self.download_process.start()
                 ## Got OK When Download mode ##
                 elif "OK" == data:

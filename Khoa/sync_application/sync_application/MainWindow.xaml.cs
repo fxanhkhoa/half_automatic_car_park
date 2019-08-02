@@ -97,11 +97,17 @@ namespace sync_application
             Ethernet.Port = Port.Text;
             Ethernet.Connect();
 
-            Global._upload.file.filename = "plate0638718.jpg";
-            Global._upload.file.mode = "UPLOAD";
-            Global._upload.file.status = "PROCESSING";
-            Console.WriteLine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
-            Global._upload.Do_Upload();
+
+            //Global._upload.FileName.filename = "plate0638718.jpg";
+            //Global._upload.FileName.mode = "UPLOAD";
+            //Global._upload.FileName.status = "PROCESSING";
+            //Console.WriteLine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+            //Global._upload.Do_Upload();
+
+            Global._download.FileName.filename = "0000_02187_b.jpg";
+            Global._download.FileName.mode = "DOWNLOAD";
+            Global._download.FileName.status = "PROCESSING";
+            Global._download.DoDownload();
         }
     }
 }

@@ -9,6 +9,7 @@ namespace sync_application
     class Global
     {
         public static upload _upload = new upload();
+        public static download _download = new download();
         public static Byte[] data = new byte[2048];
     }
 }

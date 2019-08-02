@@ -91,9 +91,10 @@ namespace sync_application
                 if (bytesRead > 0)
                 {
                     Console.WriteLine(bytesRead);
-                    string message = Encoding.UTF8.GetString(buffer);
-                    Console.WriteLine(message);
+                    //string message = Encoding.UTF8.GetString(buffer);
+                    //Console.WriteLine(message);
                     Global._upload.process(buffer);
+                    Global._download.process(buffer, bytesRead);
                 }
 
                 client.BeginReceive(buffer, 0, BufferSize, 0,

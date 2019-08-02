@@ -11,22 +11,20 @@ namespace sync_application
 {
     class upload
     {
-        private Upload_Object fileName;
+        private FileObject fileName;
         private byte isJson;
         private byte isReceive;
 
         public upload()
         {
-            file = new Upload_Object();
+            FileName = new FileObject();
         }
 
-        public Upload_Object file { get => fileName; set => fileName = value; }
-
-
+        public FileObject FileName { get => fileName; set => fileName = value; }
 
         public void Do_Upload()
         {
-            string json = JsonConvert.SerializeObject(file);
+            string json = JsonConvert.SerializeObject(FileName);
             Ethernet.SendData(json);
             Thread thr1 = new Thread(new ThreadStart(UploadThread));
             thr1.IsBackground = true;
@@ -39,19 +37,18 @@ namespace sync_application
             {
                 string json = Encoding.UTF8.GetString(data);
                 Console.WriteLine(json);
-                Upload_Object new_file = JsonConvert.DeserializeObject<Upload_Object>(json);
+                FileObject new_file = JsonConvert.DeserializeObject<FileObject>(json);
                 isJson = 1;
                 // check if this is the file of own upload
-                if (new_file.filename.CompareTo(file.filename) == 0) // Same file
+                if (new_file.mode != "UPLOAD") return; // Wrong mode
+                if (new_file.filename.CompareTo(FileName.filename) != 0) return; // wrong filename pf this process
+                if (new_file.status.CompareTo("OK") == 0) // Server send ok after receive part of file
                 {
-                    if (new_file.status.CompareTo("OK") == 0) // Server send ok after receive part of file
-                    {
-                        isReceive = 1;
-                    }
-                    else if (new_file.status.CompareTo("FAIL") == 0)
-                    {
-                        isReceive = 2;
-                    }
+                    isReceive = 1;
+                }
+                else if (new_file.status.CompareTo("FAIL") == 0)
+                {
+                    isReceive = 2;
                 }
 
             }
@@ -91,12 +88,5 @@ namespace sync_application
                 }
             }
         }
-    }
-    
-    class Upload_Object
-    {
-        public string filename;
-        public string status;
-        public string mode;
     }
 }
