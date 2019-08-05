@@ -21,6 +21,7 @@ class upload (threading.Thread):
     def run(self):
         try:
             self.parse_location()
+            print(self.filename)
             f = open(self.filename, 'ab')
             f.write(self.data)
             self.send_signal_received()
@@ -44,8 +45,9 @@ class upload (threading.Thread):
     def parse_location(self):
         file_name_length = int(self.data[-1])
         print('len = ', file_name_length)
+        print('file name array = ', self.data[-(file_name_length + 1):-1])
         self.filename = str(self.data[-(file_name_length + 1):-1], 'utf8')
-        # print(self.filename)
+        print('file name =', self.filename)
         self.location = upload.get_location(self.filename)
         self.data = self.data[:-(file_name_length + 1)]
         # print(self.data)

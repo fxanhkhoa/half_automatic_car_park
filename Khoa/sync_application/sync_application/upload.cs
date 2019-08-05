@@ -11,21 +11,29 @@ namespace sync_application
 {
     class upload
     {
-        private FileObject fileName;
         private byte isJson;
         private byte isReceive;
+        public static string drive;
 
         public upload()
         {
             FileName = new FileObject();
         }
 
-        public FileObject FileName { get => fileName; set => fileName = value; }
+        public FileObject FileName;
 
         public void Do_Upload()
         {
+            drive = string.Copy(FileName.filename);
+            drive = drive.Substring(0, drive.IndexOf(":") + 2);
+            FileName.filename = FileName.filename.Substring(FileName.filename.IndexOf(":") + 2,
+                                                                    FileName.filename.Length - 3); // Remove *:/
+
+            Console.WriteLine(drive + FileName.filename);
+
             string json = JsonConvert.SerializeObject(FileName);
             Ethernet.SendData(json);
+
             Thread thr1 = new Thread(new ThreadStart(UploadThread));
             thr1.IsBackground = true;
             thr1.Start();
@@ -60,17 +68,22 @@ namespace sync_application
 
         public void UploadThread()
         {
-            using (FileStream fs = new FileStream(fileName.filename, FileMode.Open, FileAccess.Read))
+            //Console.WriteLine(drive + FileName.filename);
+            using (FileStream fs = new FileStream(drive + FileName.filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 var buffer = new byte[1024];
                 while (fs.Read(buffer, 0, buffer.Length) > 0)
-                {   
-                    var name = Encoding.UTF8.GetBytes(fileName.filename);
-                    byte[] len = BitConverter.GetBytes(fileName.filename.Length);
-                    byte a = Convert.ToByte(fileName.filename.Length);
+                {
+                    buffer = buffer.Where(c => c != null).ToArray();
+                    Console.WriteLine(FileName.filename);
+                    var name = Encoding.UTF8.GetBytes(FileName.filename);
+                    byte[] len = BitConverter.GetBytes(FileName.filename.Length);
+                    //byte a = Convert.ToByte(FileName.filename.Length);
+                    byte a = Convert.ToByte(name.Length);
                     Array.Reverse(len);
                     //Console.WriteLine(len);
-                    Console.WriteLine(name.ToString());
+                    Console.WriteLine(Encoding.UTF8.GetString(name));
+                    Console.WriteLine(a);
 
                     byte[] rv = new byte[buffer.Length + name.Length + 1];
                     System.Buffer.BlockCopy(buffer, 0, rv, 0, buffer.Length);
@@ -78,7 +91,7 @@ namespace sync_application
 
                     rv[buffer.Length + name.Length] = a;
 
-                    Console.WriteLine(rv[1024 + fileName.filename.Length]);
+                    Console.WriteLine(rv[1024 + FileName.filename.Length]);
                     isReceive = 0;
                     Ethernet.SendData(rv);
                     while (isReceive == 0) ;
@@ -86,6 +99,7 @@ namespace sync_application
 
                     Array.Clear(buffer, 0, 1024);
                 }
+                Console.WriteLine("Done");
             }
         }
     }

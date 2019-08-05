@@ -64,6 +64,7 @@
     <Compile Include="FileObject.cs" />
     <Compile Include="Global.cs" />
     <Compile Include="upload.cs" />
+    <Compile Include="Watcher.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

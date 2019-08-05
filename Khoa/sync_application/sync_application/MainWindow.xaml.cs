@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -28,14 +29,19 @@ namespace sync_application
             InitializeComponent();
         }
 
+        private Watcher watcher;
+
         private void SyncFolder_Btn_Click(object sender, RoutedEventArgs e)
         {
             using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
             {
                 System.Windows.Forms.DialogResult result = dialog.ShowDialog();
                 Console.WriteLine(result);
-                Console.WriteLine(dialog.SelectedPath);
+                string current_path = dialog.SelectedPath.Substring(dialog.SelectedPath.IndexOf(":") + 1, 
+                                                                    dialog.SelectedPath.Length - 2);
+                Console.WriteLine(current_path);
                 FolderName.Text = dialog.SelectedPath.ToString();
+                Global.location = dialog.SelectedPath.ToString();
             }
         }
 
@@ -97,6 +103,15 @@ namespace sync_application
             Ethernet.Port = Port.Text;
             Ethernet.Connect();
 
+            Global.location = FolderName.Text;
+            //string current_path = FolderName.Text.Substring(FolderName.Text.IndexOf(":") + 2,
+            //                                                        FolderName.Text.Length - 3); // Remove *:/
+
+            Console.WriteLine(FolderName.Text);
+
+            watcher = new Watcher();
+            watcher.location = FolderName.Text;
+            watcher.start();
 
             //Global._upload.FileName.filename = "plate0638718.jpg";
             //Global._upload.FileName.mode = "UPLOAD";
@@ -104,10 +119,12 @@ namespace sync_application
             //Console.WriteLine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
             //Global._upload.Do_Upload();
 
-            Global._download.FileName.filename = "0000_02187_b.jpg";
-            Global._download.FileName.mode = "DOWNLOAD";
-            Global._download.FileName.status = "PROCESSING";
-            Global._download.DoDownload();
+            //Global._download.FileName.filename = "0000_02187_b.jpg";
+            //Global._download.FileName.mode = "DOWNLOAD";
+            //Global._download.FileName.status = "PROCESSING";
+            //Global._download.DoDownload();
         }
+
+        
     }
 }

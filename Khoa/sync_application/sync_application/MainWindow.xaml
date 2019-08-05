@@ -9,7 +9,7 @@
     <Grid>
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="50"></RowDefinition>
                 <RowDefinition Height="30"></RowDefinition>
                 <RowDefinition Height="*"></RowDefinition>
             </Grid.RowDefinitions>
@@ -18,7 +18,7 @@
                 <ColumnDefinition Width="*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
 
-            <TextBox Grid.Row="0" Grid.Column="0" Name="FolderName"></TextBox>
+            <TextBox Grid.Row="0" Grid.Column="0" Name="FolderName" TextWrapping="WrapWithOverflow" Text="D:\My_Work\Python\half_automatic_car_park\Khoa\sync_application\sync_application\bin\Debug\test_folder"></TextBox>
             <Button Grid.Row="0" Grid.Column="1" Name="syncFolder_Btn" Click="SyncFolder_Btn_Click">Select Folder to Sync</Button>
             <TextBox Grid.Row="1" Grid.Column="0" Name="IP" Text="192.168.1.3" TextChanged="IP_TextChanged" GotFocus="IP_GotFocus" LostFocus="IP_LostFocus"/>
             <TextBox Grid.Row="1" Grid.Column="1" Name="Port" Text="1000" TextChanged="Port_TextChanged" LostFocus="Port_LostFocus" GotFocus="Port_GotFocus"></TextBox>
