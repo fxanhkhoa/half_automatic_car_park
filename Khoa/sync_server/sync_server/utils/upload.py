@@ -21,11 +21,15 @@ class upload (threading.Thread):
     def run(self):
         try:
             self.parse_location()
-            print(self.filename)
+            print("======= Removing Null byte ======")
+            self.data = self.data.rstrip(b'\x00')
+            print("======= Writing File ======")
             f = open(self.filename, 'ab')
             f.write(self.data)
+            print("======= Sending OK Signal ======")
             self.send_signal_received()
             f.close()
+            print("======= Sent OK Signal ======")
         except Exception as e:
             print('error is: ',e)
             pass

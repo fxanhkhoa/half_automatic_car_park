@@ -12,5 +12,6 @@ namespace sync_application
         public static upload _upload = new upload();
         public static download _download = new download();
         public static Byte[] data = new byte[2048];
+        public static Watcher watcher;
     }
 }

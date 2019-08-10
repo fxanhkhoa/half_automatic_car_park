@@ -14,6 +14,7 @@ namespace sync_application
         private byte isJson;
         private byte isReceive;
         public static string drive;
+        public static byte isDone = 1;
 
         public upload()
         {
@@ -28,7 +29,8 @@ namespace sync_application
             drive = drive.Substring(0, drive.IndexOf(":") + 2);
             FileName.filename = FileName.filename.Substring(FileName.filename.IndexOf(":") + 2,
                                                                     FileName.filename.Length - 3); // Remove *:/
-
+            FileName.mode = "UPLOAD";
+            FileName.status = "PROCESSING";
             Console.WriteLine(drive + FileName.filename);
 
             string json = JsonConvert.SerializeObject(FileName);
@@ -37,14 +39,19 @@ namespace sync_application
             Thread thr1 = new Thread(new ThreadStart(UploadThread));
             thr1.IsBackground = true;
             thr1.Start();
+
+            isDone = 0;
         }
 
-        public void process(Byte[] data)
+        public void process(Byte[] data, int bytesRead)
         {
+            Console.WriteLine("==========  UPLOAD PROCESSING ==========");
             try
             {
-                string json = Encoding.UTF8.GetString(data);
-                Console.WriteLine(json);
+                byte[] true_data = new Byte[bytesRead];
+                Array.Copy(data, 0, true_data, 0, bytesRead);
+                string json = Encoding.UTF8.GetString(true_data);
+                Console.WriteLine("========= UPLOAD DATA: " + json + "============");
                 FileObject new_file = JsonConvert.DeserializeObject<FileObject>(json);
                 isJson = 1;
                 // check if this is the file of own upload
@@ -62,6 +69,7 @@ namespace sync_application
             }
             catch (Exception ex)
             {
+                Console.WriteLine("========== UPLOAD: NOT JSON ==========");
                 isJson = 0;
             }
         }
@@ -100,6 +108,7 @@ namespace sync_application
                     Array.Clear(buffer, 0, 1024);
                 }
                 Console.WriteLine("Done");
+                isDone = 1;
             }
         }
     }

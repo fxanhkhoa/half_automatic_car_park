@@ -93,7 +93,8 @@ namespace sync_application
                     Console.WriteLine(bytesRead);
                     //string message = Encoding.UTF8.GetString(buffer);
                     //Console.WriteLine(message);
-                    Global._upload.process(buffer);
+                    Global.watcher.ProcessData(buffer, bytesRead);
+                    Global._upload.process(buffer, bytesRead);
                     Global._download.process(buffer, bytesRead);
                 }
 

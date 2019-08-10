@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,7 +30,6 @@ namespace sync_application
             InitializeComponent();
         }
 
-        private Watcher watcher;
 
         private void SyncFolder_Btn_Click(object sender, RoutedEventArgs e)
         {
@@ -37,6 +37,7 @@ namespace sync_application
             {
                 System.Windows.Forms.DialogResult result = dialog.ShowDialog();
                 Console.WriteLine(result);
+                if (dialog.SelectedPath == "") return;
                 string current_path = dialog.SelectedPath.Substring(dialog.SelectedPath.IndexOf(":") + 1, 
                                                                     dialog.SelectedPath.Length - 2);
                 Console.WriteLine(current_path);
@@ -103,15 +104,29 @@ namespace sync_application
             Ethernet.Port = Port.Text;
             Ethernet.Connect();
 
+            /////////// Send Folder To Sync ///////////
+            ///
+            FileObject folderInfo = new FileObject();
+            folderInfo.filename = FolderName.Text.Substring(FolderName.Text.IndexOf(":") + 2,
+                                                                    FolderName.Text.Length - 3);
+            folderInfo.mode = "LOCATION";
+            folderInfo.status = "";
+
+            string json = JsonConvert.SerializeObject(folderInfo);
+            Ethernet.SendData(json);
+
             Global.location = FolderName.Text;
             //string current_path = FolderName.Text.Substring(FolderName.Text.IndexOf(":") + 2,
             //                                                        FolderName.Text.Length - 3); // Remove *:/
 
             Console.WriteLine(FolderName.Text);
 
-            watcher = new Watcher();
-            watcher.location = FolderName.Text;
-            watcher.start();
+            upload.isDone = 1;
+            Global.watcher = new Watcher();
+            Global.watcher.location = FolderName.Text;
+            Global.watcher.start();
+
+            Watcher.drive = FolderName.Text.Substring(0, FolderName.Text.IndexOf(":") + 2);
 
             //Global._upload.FileName.filename = "plate0638718.jpg";
             //Global._upload.FileName.mode = "UPLOAD";
@@ -125,6 +140,6 @@ namespace sync_application
             //Global._download.DoDownload();
         }
 
-        
+
     }
 }
