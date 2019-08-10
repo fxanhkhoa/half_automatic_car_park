@@ -4,3 +4,4 @@ pip install colorama
 
 pip install filehash
 
+pip install termcolor
