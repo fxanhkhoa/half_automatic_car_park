@@ -3,6 +3,9 @@ import os
 import json
 import time
 
+import colorama
+from termcolor import colored, cprint
+
 class watcher (threading.Thread):
    def __init__(self, location):
       threading.Thread.__init__(self)
@@ -13,34 +16,34 @@ class watcher (threading.Thread):
       try:
          while self.run_flag:
             try:
-               print("====== WATCHER FOLDER ====== ", self.location)
+               cprint("====== WATCHER FOLDER: {} ======".format(self.location), 'blue')
                for r, d, f in os.walk(self.location):
                   for efile in f:
-                     print("===== WATCHER FILE: =====", r , " ", d,efile)
+                     cprint("===== WATCHER FILE: {} {} {} =====".format(r, d, efile), 'blue')
                      if ("FileTable.json" == efile):
                         continue
                      if (not self.exist(r + "\\" + efile)):
-                        print("===== DELETING FILE: =====", efile)
+                        cprint("===== DELETING FILE: {} =====".format(efile), 'blue')
                         os.remove(r + "/" + efile)
             except Exception as ex:
-               print("====== WATCHER ERROR INSIDE: ", ex, " ======")
+               cprint("====== WATCHER ERROR INSIDE: {} ======".format(ex), 'red')
 
             time.sleep(10)
       except Exception as e:
-         print("====== WATCHER ERROR: ", e, " ======")
+         print("====== WATCHER ERROR: {} ======".format(e), 'red')
 
    def stop_all(self):
       self.run_flag = False
 
    def exist(self, file):
-      print("====== WATCHER CHECKING EXIST ====== ", file)
+      cprint("====== WATCHER CHECKING EXIST {} ====== ".format(file), 'yellow')
       with open(self.location + "/FileTable.json", 'r') as f:
          distros_dict = json.load(f)
       for element in distros_dict:
-         print("====== WATCHER ELEMENT ====== ", element["filename"])
+         cprint("====== WATCHER ELEMENT ====== ".format(element["filename"]), 'yellow')
          if (file == element["filename"]):
-            print("===== WATCHER EXIST =====")
+            cprint("===== WATCHER EXIST =====" , 'yellow')
             return True
          else:
-            print("===== WATCHER CONTINUE CHECKING =====")
+            cprint("===== WATCHER CONTINUE CHECKING =====", 'yellow')
       return False

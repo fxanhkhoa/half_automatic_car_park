@@ -54,7 +54,7 @@ def CheckSumMD5(filename, md5hash):
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
-        print("{} connected".format(self.client_address))
+        cprint("{} connected".format(self.client_address), 'green' , 'on_magenta')
         clients.append(self.request)
         close = 0
         self.isfilename = False
@@ -71,12 +71,12 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     data = str(buf, 'utf8')
                     # print(data)
                 except Exception as e:
-                    print("Error when change str", e)
+                    cprint("Error when change str {}".format(e), 'red')
 
                 ## Check if json ##
                 if isJson(data):
                     json_object = json.loads(data)
-                    print(data)
+                    # cprint(data, 'white')
                     self.filename = ""
                     if (json_object["status"] == "OK"):
                         print("set flag")
@@ -87,6 +87,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         print(self.filename)
                         if (self.mode == 'UPLOAD'):
                             ## Remove 1st time ##
+                            cprint("===== MODE UPLOAD =====", 'cyan')
                             file_location = upload.get_location(self.filename)
                             if file_location != '':
                                 if not os.path.exists(file_location):
@@ -95,13 +96,13 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                                 os.remove(self.filename)
 
                         elif (self.mode == "DOWNLOAD"):
-                            print("create")
+                            cprint("===== MODE DOWNLOAD =====", 'cyan')
                             self.download_process.request_client = self.request
                             self.download_process.filename = self.filename
                             self.download_process.start()
 
                         elif (self.mode == "CHECKMD5"):
-                            print("Checking MD5 \n")
+                            cprint("===== MODE CHECK MD5 =====", 'cyan')
                             message = {
                                 "filename": self.filename,
                                 "status": "",
@@ -112,7 +113,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             else:
                                 message["status"] = "DIFF"
                             json_str = json.dumps(message)
-                            print("JSON TO SEND: ", json_str)
+                            cprint("JSON TO SEND: {}".format(json_str), 'magenta')
                             self.request.sendall(bytes(json_str, 'utf8'))
                         
                         elif (self.mode == "LOCATION"):

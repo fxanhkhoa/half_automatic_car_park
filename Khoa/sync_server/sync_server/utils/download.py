@@ -5,6 +5,9 @@ import json
 import queue
 from .Global import Global
 
+import colorama
+from termcolor import colored, cprint
+
 class download (threading.Thread):
 
     @staticmethod
@@ -35,7 +38,6 @@ class download (threading.Thread):
                 # self.lock.acquire()
                 while (self.flag_continue == False):
                     pass
-                print("GOT")
             
                 if (self.stop):
                     return
@@ -53,7 +55,7 @@ class download (threading.Thread):
             }
             json_str = json.dumps(message)
             self.request_client.sendall(bytes(json_str, 'utf8'))
-            print("sent ", count, " times")
+            cprint("sent {} times".format(count), 'blue')
         except Exception as e:
             print('error is: ',e)
     

@@ -3,6 +3,9 @@ import threading
 import os
 import json
 
+import colorama
+from termcolor import colored, cprint
+
 class upload (threading.Thread):
     
     @staticmethod
@@ -21,15 +24,15 @@ class upload (threading.Thread):
     def run(self):
         try:
             self.parse_location()
-            print("======= Removing Null byte ======")
+            cprint("======= Removing Null byte ======", 'blue')
             self.data = self.data.rstrip(b'\x00')
-            print("======= Writing File ======")
+            cprint("======= Writing File ======", 'blue')
             f = open(self.filename, 'ab')
             f.write(self.data)
-            print("======= Sending OK Signal ======")
+            cprint("======= Sending OK Signal ======", 'blue')
             self.send_signal_received()
             f.close()
-            print("======= Sent OK Signal ======")
+            cprint("======= Sent OK Signal ======", 'blue')
         except Exception as e:
             print('error is: ',e)
             pass
@@ -48,10 +51,10 @@ class upload (threading.Thread):
 
     def parse_location(self):
         file_name_length = int(self.data[-1])
-        print('len = ', file_name_length)
-        print('file name array = ', self.data[-(file_name_length + 1):-1])
+        # print('len = ', file_name_length)
+        # print('file name array = ', self.data[-(file_name_length + 1):-1])
         self.filename = str(self.data[-(file_name_length + 1):-1], 'utf8')
-        print('file name =', self.filename)
+        # print('file name =', self.filename)
         self.location = upload.get_location(self.filename)
         self.data = self.data[:-(file_name_length + 1)]
         # print(self.data)
