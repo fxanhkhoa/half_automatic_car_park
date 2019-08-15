@@ -22,7 +22,6 @@ namespace sync_application
         Boolean let = false;
         DispatcherTimer dispatcherTimer;
         public static string drive;
-
         int isJson = 0;
 
         List<EditingFile> listEditingFile = new List<EditingFile>();
@@ -30,32 +29,44 @@ namespace sync_application
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
         public void start()
         {
+            Global.mw.Dispatcher.Invoke(new Action(() => Global.mw.appendReportText("== Starting Watcher ==")));
             if (location == "")
             {
                 MessageBox.Show("Select location");
                 return;
             }
 
-            TimerInitialize();
+            try
+            {
+                TimerInitialize();
 
-            watcher = new FileSystemWatcher();
-            watcher.Path = location;
+                watcher = new FileSystemWatcher();
+                watcher.Path = location;
 
-            watcher.NotifyFilter = NotifyFilters.LastWrite
-                                 | NotifyFilters.FileName
-                                 | NotifyFilters.DirectoryName;
+                watcher.NotifyFilter = NotifyFilters.LastWrite
+                                     | NotifyFilters.FileName
+                                     | NotifyFilters.DirectoryName;
 
-            watcher.Filter = "*.*";
+                watcher.Filter = "*.*";
 
-            // Add event handlers.
-            watcher.Changed += new FileSystemEventHandler(OnChanged);
-            watcher.Created += new FileSystemEventHandler(OnCreated);
-            watcher.Deleted += new FileSystemEventHandler(OnDeleted);
-            watcher.Renamed += new RenamedEventHandler(OnRename);
+                // Add event handlers.
+                watcher.Changed += new FileSystemEventHandler(OnChanged);
+                watcher.Created += new FileSystemEventHandler(OnCreated);
+                watcher.Deleted += new FileSystemEventHandler(OnDeleted);
+                watcher.Renamed += new RenamedEventHandler(OnRename);
 
-            // Begin watching.
-            watcher.EnableRaisingEvents = true;
-            dispatcherTimer.Start();
+                // Begin watching.
+                watcher.EnableRaisingEvents = true;
+                //dispatcherTimer.Start();
+
+                Thread checkThr = new Thread(new ThreadStart(checkAllFile));
+                checkThr.IsBackground = true;
+                checkThr.Start();
+
+            }
+            catch (Exception e){
+                Global.mw.appendReportText("== Starting Watcher Fail {0} ==", e);
+            }
         }
 
         private void TimerInitialize()
@@ -69,6 +80,7 @@ namespace sync_application
         {
             try
             {
+                Console.WriteLine("===== GO TO WATCHER PROCESS DATA =====");
                 byte[] true_data = new Byte[bytesRead];
                 Array.Copy(data, 0, true_data, 0, bytesRead);
                 string json = Encoding.UTF8.GetString(true_data);
@@ -80,7 +92,7 @@ namespace sync_application
                 {
                     if (new_file.status == "DIFF")
                     {
-                        Global._upload.FileName.filename = Watcher.drive + new_file.filename; // Set only file name because status and mode 
+                        Global._upload.FileName.filename = new_file.filename; // Set only file name because status and mode 
                                                                                               //is set in function
                         Global._upload.Do_Upload();
 
@@ -89,13 +101,128 @@ namespace sync_application
                         //while (upload.isDone == 0);
                         Console.WriteLine("============= START UPLOAD =============== " + Global._upload.FileName.filename);
                     }
+                    else if (new_file.status == "SAME")
+                    {
+                        Console.WriteLine("============= SAME MD5 =============== ");
+                        upload.isDone = 1;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("======== Is Not Json In Watcher {0} =========", ex);
+                isJson = 0;
+            }
+        }
+
+        private void checkAllFile()
+        {
+            try
+            {
+                while (true)
+                {
+                    try
+                    {
+                        FileStream fs;
+                        List<FileInfoJson> listfileInfo = new List<FileInfoJson>();
+
+                        // Create file
+                        if (!File.Exists(Global.location + "/FileTable.json"))
+                        {
+                            fs = new FileStream(Global.location + "/FileTable.json", FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+                            fs.Close();
+                        }
+
+                        //// Open File
+                        //fs = new FileStream("FileTable.json", FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+                        //fs.Write(new byte[1], 0, 0);
+                        //fs.Close();
+
+                        // Append file
+                        //fs = new FileStream("FileTable.json", FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                        string[] allfiles = Directory.GetFiles(location, "*.*", SearchOption.AllDirectories);
+                        //Console.WriteLine("===== WATCHER LOCATION ===== " + Global.location.Substring(Global.location.IndexOf(":") + 2,
+                        //                                                    Global.location.Length - 3));
+                        //listfileInfo.Add(new FileInfoJson(Global.location.Substring(Global.location.IndexOf(":") + 2,
+                        //                                                    Global.location.Length - 3)));
+
+                        /////// For File Table ///////
+                        foreach (var file in allfiles)
+                        {
+                            if (upload.isDone == 0) break;
+                            FileInfo info = new FileInfo(file);
+                            FileObject fo = new FileObject();
+                            Console.WriteLine("====== TIMER ====== : " + file);
+                            Console.WriteLine("====== TIMER ====== : " + info.DirectoryName);
+                            fo.filename = file;
+
+                            //// Append to List
+
+                            string temp_file_name = file;
+
+                            if (info.Name != "FileTable.json")
+                            {
+                                listfileInfo.Add(new FileInfoJson(temp_file_name));
+                            }
+
+                            //fo.mode = "CHECKMD5";
+                            //fo.status = EditingFile.getMD5Hash(info.FullName);
+
+                            //upload.isDone = 0;
+
+                            //string json_to_send = JsonConvert.SerializeObject(fo);
+                            //Console.WriteLine("======== WATCHER JSON TO SEND========= " + json_to_send);
+                            //Ethernet.SendData(json_to_send);
+
+                            //while (upload.isDone == 0) ;
+                        }
+                        string json = JsonConvert.SerializeObject(listfileInfo.ToArray());
+                        File.WriteAllText(Global.location + "/FileTable.json", json);
+
+                        /////// For All File ///////
+                        foreach (var file in allfiles)
+                        {
+                            if (upload.isDone == 0) break;
+                            FileInfo info = new FileInfo(file);
+                            FileObject fo = new FileObject();
+                            Console.WriteLine("====== TIMER ====== : " + file);
+                            Console.WriteLine("====== TIMER ====== : " + info.DirectoryName);
+                            fo.filename = file;
+
+                            //// Append to List
+
+                            string temp_file_name = file;
+
+                            if (info.Name != "FileTable.json")
+                            {
+                                listfileInfo.Add(new FileInfoJson(temp_file_name));
+                            }
+
+                            fo.mode = "CHECKMD5";
+                            fo.status = EditingFile.getMD5Hash(info.FullName);
+
+                            upload.isDone = 0;
+
+                            string json_to_send = JsonConvert.SerializeObject(fo);
+                            Console.WriteLine("======== WATCHER JSON TO SEND========= " + json_to_send);
+                            Ethernet.SendData(json_to_send);
+
+                            while (upload.isDone == 0) ;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("===== Watcher Tick Error {0} =====", ex.ToString());
+                    }
+
+                    Thread.Sleep((minute * 60 + second) * 1000);
                 }
             }
             catch
             {
-                Console.WriteLine("======== Is Not Json In Watcher =========");
-                isJson = 0;
+
             }
+            
         }
 
         private void dispatcherTimer_Tick(object sender, EventArgs e) // use to check file is still edit
@@ -130,22 +257,19 @@ namespace sync_application
                     FileInfo info = new FileInfo(file);
                     FileObject fo = new FileObject();
                     Console.WriteLine("====== TIMER ====== : " + file);
-                    Console.WriteLine("====== TIMER ====== : " + info.Name);
-                    fo.filename = info.FullName.Substring(info.FullName.IndexOf(":") + 2,
-                                                                    info.FullName.Length - 3); // Remove *:/;
+                    Console.WriteLine("====== TIMER ====== : " + info.DirectoryName);
+                    fo.filename = file;
 
                     //// Append to List
 
-                    string temp_file_name = info.FullName.Substring(info.FullName.IndexOf(":") + 2,
-                                                                    info.FullName.Length - 3);
+                    string temp_file_name = file;
+
                     if (info.Name != "FileTable.json")
                     {
                         listfileInfo.Add(new FileInfoJson(temp_file_name));
+                        string json = JsonConvert.SerializeObject(listfileInfo.ToArray());
+                        File.WriteAllText(Global.location + "/FileTable.json", json);
                     }
-                    //// Append to File
-                    //string temp_file_name = info.FullName.Substring(info.FullName.IndexOf(":") + 2,
-                    //                                                info.FullName.Length - 3);
-                    //fs.Write(Encoding.UTF8.GetBytes(temp_file_name), 0, temp_file_name.Length);
 
                     fo.mode = "CHECKMD5";
                     fo.status = EditingFile.getMD5Hash(info.FullName);
@@ -155,41 +279,13 @@ namespace sync_application
                     Ethernet.SendData(json_to_send);
 
                     Thread.Sleep(500);
+                    upload.isDone = 0;
                     //while (upload.isDone == 0) ;
                 }
-
-                // Check File Exist
-
-
-                //FileInfoJson a = new FileInfoJson("SDSDSD");
-                //string json = JsonConvert.SerializeObject(new FileInfoJson("abcdef"));
-                string json = JsonConvert.SerializeObject(listfileInfo.ToArray());
-                File.WriteAllText(Global.location + "/FileTable.json", json);
-
-                //Global._upload.FileName.filename = "FileTable.json";
-                //Global._upload.Do_Upload();
-
-                ///////// Create Table File ///////////
-
-                //foreach (EditingFile edt in listEditingFile)
-                //{
-                //    string newMD5 = EditingFile.getMD5Hash(edt.filepath);
-
-                //    // Different => Edited
-                //    if (newMD5.CompareTo(edt.md5_hash) != 0)
-                //    {
-                //        Global._upload.FileName.filename = edt.filepath;
-                //        Global._upload.FileName.mode = "UPLOAD";
-                //        Global._upload.FileName.status = "PROCESSING";
-                //        Global._upload.Do_Upload();
-
-                //        listEditingFile.Remove(edt);
-                //    }
-                //}
             }
-            catch
+            catch (Exception ex)
             {
-
+                Console.WriteLine("===== Watcher Tick Error {0} =====", ex.ToString());
             }
         }
 
@@ -228,7 +324,20 @@ namespace sync_application
             else
                 let = false;
         }
-    
+
+        public void processEthernetData()
+        {
+            Thread thr =  new Thread(new ThreadStart(ProcessThread));
+            thr.IsBackground = true;
+            thr.Start();            
+        }
+
+        public void ProcessThread()
+        {
+            Global.watcher.ProcessData(Ethernet.buffer, Ethernet._bytesRead);
+            Global._upload.process(Ethernet.buffer, Ethernet._bytesRead);
+            Global._download.process(Ethernet.buffer, Ethernet._bytesRead);
+        }
     }
 
     class CheckingFile

@@ -7,6 +7,9 @@ import colorama
 from termcolor import colored, cprint
 
 class watcher (threading.Thread):
+
+   can_watch = True
+
    def __init__(self, location):
       threading.Thread.__init__(self)
       self.location = location
@@ -16,6 +19,8 @@ class watcher (threading.Thread):
       try:
          while self.run_flag:
             try:
+               if (watcher.can_watch == False):
+                  continue
                cprint("====== WATCHER FOLDER: {} ======".format(self.location), 'blue')
                for r, d, f in os.walk(self.location):
                   for efile in f:

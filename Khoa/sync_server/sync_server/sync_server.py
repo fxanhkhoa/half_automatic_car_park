@@ -61,10 +61,12 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         self.mode = ''
         self.filename = ''
         self.download_process = download(self.request, self.filename)
+        self.count = 0
 
         while not close:
             try:
-                buf = self.request.recv(2048)  # max 52428800
+                buf = self.request.recv(4096)  # max 52428800
+                cprint("len = {}".format(len(buf)), 'green', 'on_red')
                 # print(buf)
                 try:
                     data = ''
@@ -81,6 +83,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     if (json_object["status"] == "OK"):
                         print("set flag")
                         self.download_process.set_flag(True)
+                    elif (json_object["status"] == "DONE"):
+                        watcher.can_watch = True
+                        cprint("==== UPLOAD DONE, COUNT = {} ====".format(self.count), 'cyan')
                     else:
                         self.mode = json_object['mode']
                         self.filename = json_object['filename']
@@ -91,9 +96,11 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             file_location = upload.get_location(self.filename)
                             if file_location != '':
                                 if not os.path.exists(file_location):
-                                    os.makedirs(file_location)
+                                    os.makedirs(file_location)  
                             if os.path.exists(self.filename):
                                 os.remove(self.filename)
+                            
+                            self.count = 0
 
                         elif (self.mode == "DOWNLOAD"):
                             cprint("===== MODE DOWNLOAD =====", 'cyan')
@@ -117,8 +124,41 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             self.request.sendall(bytes(json_str, 'utf8'))
                         
                         elif (self.mode == "LOCATION"):
+                            cprint("== Getting Location {} ==".format(self.filename), 'cyan')
                             self.watcher = watcher(self.filename)
                             self.watcher.start()
+
+                        elif (self.mode == "SYNCBACK"):
+                            cprint("== SYNC BACK MODE ==", 'cyan')
+                            current_folder = os.getcwd()
+                            current_folder = current_folder[2::]
+                            print(current_folder)
+                            flag_found = 0
+                            for r, d, f in os.walk(current_folder):
+                                print(f)
+                                for efile in f:
+                                    if ("FileTable.json" == efile):
+                                        cprint("== Location of FileTable.json: {} ==".format(os.path.split(r[::])[-1]), 'magenta')
+                                        message = {
+                                            "filename": os.path.split(r[::])[-1] + "\\" + efile,
+                                            "status": "PROCESSING",
+                                            "mode": "SYNCBACK"
+                                        }
+                                        json_str = json.dumps(message)
+                                        cprint("json to send: {}".format(json_str), 'yellow')
+                                        self.request.sendall(bytes(json_str, "utf8"))
+                                        flag_found = 1
+                                        break
+                                
+                            if (flag_found == 0):
+                                message = {
+                                    "filename": "FAIL",
+                                    "status": "FAIL",
+                                    "mode": "SYNCBACK"
+                                }
+                                json_str = json.dumps(message)
+                                cprint("json to send: {}".format(json_str), 'yellow')
+                                self.request.sendall(bytes(json_str, "utf8"))
                                 
                 ## Got OK When Download mode ##
                 elif "OK" == data:
@@ -129,10 +169,11 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 else: # Not Json
                     self.upload_process = upload(self.request, buf)
                     self.upload_process.start()
+                    self.count = self.count + 1
                     
                 ##### Handle disconnect #####
                 if not buf:
-                    print('Disconnected: ', self.client_address)
+                    cprint('Disconnected: {}'.format(self.client_address), 'red')
                     clients.remove(self.request)
                     close = 1
                     return
@@ -140,7 +181,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             ##### Handle disconnect #####        
             except Exception as e:
                 print(e)
-                print('Disconnected: ', self.client_address)
+                cprint('Disconnected: {}'.format(self.client_address), 'red')
                 clients.remove(self.request)
                 self.watcher.stop_all()
                 close = 1

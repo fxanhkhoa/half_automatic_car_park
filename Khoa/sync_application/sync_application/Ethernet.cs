@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace sync_application
@@ -14,8 +15,9 @@ namespace sync_application
         private static string port;
         private static Socket sender;
         private static Ethernet _ethernet = new Ethernet();
-        public const int BufferSize = 4096;
+        public const int BufferSize = 2048;
         public static byte[] buffer = new byte[BufferSize];
+        public static int _bytesRead;
         public Ethernet(string ip, string port)
         {
             Ip = ip;
@@ -32,6 +34,7 @@ namespace sync_application
 
         public static void Connect()
         {
+            Global.mw.appendReportText("== Connecting to " + Ip + ":" + Port + " ==");
             if ((ip != "") && (port != ""))
             {
                 try
@@ -47,6 +50,7 @@ namespace sync_application
                 }
                 catch (Exception ex)
                 {
+                    Global.mw.appendReportText("== Connect Fail to {0}:{1} ==", Ip, Port);
                     Console.WriteLine(ex);
                 }
             }
@@ -59,6 +63,7 @@ namespace sync_application
                 Socket client = (Socket)ar.AsyncState;
                 client.EndConnect(ar);
                 Console.WriteLine("Socket connected to {0}", client.RemoteEndPoint.ToString());
+                Global.mw.Dispatcher.Invoke(new Action(() => Global.mw.appendReportText("Socket connected to {0}", client.RemoteEndPoint.ToString())));
             }
             catch (Exception ex)
             {
@@ -90,12 +95,20 @@ namespace sync_application
                 Global.data = buffer;
                 if (bytesRead > 0)
                 {
-                    Console.WriteLine(bytesRead);
+                    _bytesRead = bytesRead;
+                    Console.WriteLine("Receive {0} bytes", bytesRead);
+                    //Global.mw.appendReportText("Received {0}", bytesRead);
                     //string message = Encoding.UTF8.GetString(buffer);
                     //Console.WriteLine(message);
-                    Global.watcher.ProcessData(buffer, bytesRead);
-                    Global._upload.process(buffer, bytesRead);
-                    Global._download.process(buffer, bytesRead);
+                    try
+                    {
+                        Global.watcher.processEthernetData();
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+
                 }
 
                 client.BeginReceive(buffer, 0, BufferSize, 0,
@@ -103,7 +116,7 @@ namespace sync_application
             }
             catch (Exception ex)
             {
-
+                Console.WriteLine("Error in recive callback {0}", ex.ToString());
             }
             
         }
@@ -141,6 +154,31 @@ namespace sync_application
         {
             Byte[] arraybyte = Encoding.UTF8.GetBytes(data);
             Send(sender, arraybyte);
+        }
+
+        public static bool IsConnected()
+        {
+            bool part1, part2;
+            try
+            {
+                part1 = sender.Poll(1000, SelectMode.SelectRead);
+                part2 = (sender.Available == 0);
+            }
+            catch (Exception e)
+            {
+                return true;
+            }
+
+            if (part1 && part2)
+                return false;
+            else
+                return true;
+        }
+
+        public static void Disconnect()
+        {
+            sender.Shutdown(SocketShutdown.Both);
+            sender.Disconnect(true);
         }
     }
 }

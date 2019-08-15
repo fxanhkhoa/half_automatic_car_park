@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Configuration;
 
 
 namespace sync_application
@@ -29,7 +30,6 @@ namespace sync_application
         {
             InitializeComponent();
         }
-
 
         private void SyncFolder_Btn_Click(object sender, RoutedEventArgs e)
         {
@@ -98,35 +98,71 @@ namespace sync_application
             }
         }
 
+        public void appendReportText(string text, params object[] parameters)
+        {    
+            reportField.Text += string.Format(text, parameters) + Environment.NewLine;
+            scrollReport.ScrollToBottom();
+        }
+
+        public void WriteLine(string text, params object[] args)
+        {
+            var message = args.Length == 0 ? text : string.Format(text, args);
+            string.Format(text, args);
+        }
+
+        private void SaveSetting()
+        {
+            Properties.Settings.Default.IP = IP.Text;
+            Properties.Settings.Default.Port = Port.Text;
+            Properties.Settings.Default.Location = FolderName.Text;
+            Properties.Settings.Default.Save();
+        }
+
+        private void LoadSetting()
+        {
+            IP.Text = Properties.Settings.Default.IP;
+            Port.Text = Properties.Settings.Default.Port;
+            FolderName.Text = Properties.Settings.Default.Location;
+        }
+
         private void Sync_Btn_Click(object sender, RoutedEventArgs e)
         {
-            Ethernet.Ip = IP.Text;
-            Ethernet.Port = Port.Text;
-            Ethernet.Connect();
+            appendReportText("== Saving Setting ==");
+            SaveSetting();
+                
+            try
+            {
+                Ethernet.Ip = IP.Text;
+                Ethernet.Port = Port.Text;
+                Ethernet.Connect();
+            }
+            catch (Exception ex)
+            {
+                Global.mw.appendReportText("Failed to connect to Server {0}:{1}", IP.Text, Port.Text);
+            }
 
             /////////// Send Folder To Sync ///////////
             ///
             FileObject folderInfo = new FileObject();
-            folderInfo.filename = FolderName.Text.Substring(FolderName.Text.IndexOf(":") + 2,
-                                                                    FolderName.Text.Length - 3);
+            string dirName = System.IO.Path.GetFileName(FolderName.Text);
+            folderInfo.filename = dirName;
             folderInfo.mode = "LOCATION";
             folderInfo.status = "";
 
             string json = JsonConvert.SerializeObject(folderInfo);
             Ethernet.SendData(json);
 
-            Global.location = FolderName.Text;
+            Global.location = dirName;
             //string current_path = FolderName.Text.Substring(FolderName.Text.IndexOf(":") + 2,
             //                                                        FolderName.Text.Length - 3); // Remove *:/
 
             Console.WriteLine(FolderName.Text);
 
             upload.isDone = 1;
-            Global.watcher = new Watcher();
-            Global.watcher.location = FolderName.Text;
+            Global.watcher.location = dirName;
             Global.watcher.start();
 
-            Watcher.drive = FolderName.Text.Substring(0, FolderName.Text.IndexOf(":") + 2);
+            //Watcher.drive = FolderName.Text.Substring(0, FolderName.Text.IndexOf(":") + 2);
 
             //Global._upload.FileName.filename = "plate0638718.jpg";
             //Global._upload.FileName.mode = "UPLOAD";
@@ -140,6 +176,47 @@ namespace sync_application
             //Global._download.DoDownload();
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            appendReportText("== Loading Setting ==");
+            LoadSetting();
+            if (IP.Text == "")
+            {
+                IP.Text = "Input IP";
+            }
+            if (Port.Text == "")
+            {
+                Port.Text = "Input Port";
+            }
+        }
 
+        /// <summary>
+        /// Use to Download all folders, files from server
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Download_Btn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Ethernet.Ip = IP.Text;
+                Ethernet.Port = Port.Text;
+                Ethernet.Connect();
+            }
+            catch (Exception ex)
+            {
+                Global.mw.appendReportText("Failed to connect to Server {0}:{1}", IP.Text, Port.Text);
+            }
+
+            FileObject downloadObj = new FileObject();
+            downloadObj.filename = "FileTable.json";
+            downloadObj.mode = "SYNCBACK";
+            downloadObj.status = "PROCESSING";
+
+            download.drive = FolderName.Text.Substring(0, FolderName.Text.IndexOf(":") + 2);
+
+            string json = JsonConvert.SerializeObject(downloadObj);
+            Ethernet.SendData(json);
+        }
     }
 }
