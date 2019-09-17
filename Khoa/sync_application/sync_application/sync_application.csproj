@@ -59,9 +59,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="download.cs" />
     <Compile Include="Ethernet.cs" />
+    <Compile Include="FileObject.cs" />
     <Compile Include="Global.cs" />
+    <Compile Include="SyncBack.cs" />
     <Compile Include="upload.cs" />
+    <Compile Include="Watcher.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
